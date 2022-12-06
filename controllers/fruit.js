@@ -12,7 +12,15 @@ const router = express.Router() // router will have all routes attached to it
 //////////////////////////////////////////////
 //////// Actual Routes
 ///////////////////////////////////////////////
-
+// authorization middleware
+router.use((req, res, next) => {
+    console.log(req.session)
+    if(req.session.loggedIn) {
+        next()
+    } else {
+        res.redirect("/user/login")
+    }
+})
 
 router.get('/seed', (req, res) => {
 
@@ -23,10 +31,10 @@ router.get('/seed', (req, res) => {
 router.get('/', (req, res) => {
 
     // Get all fruits from mongo and send them back
-    Fruit.find({})
+    Fruit.find({ username: req.session.username})
     .then((fruits) => {
         // res.json(fruits)
-        res.render('fruits/index.ejs', { fruits })
+        res.render('fruits/index.ejs', { fruits, user:req.session.username })
     })
     .catch(err => console.log(err))
 
@@ -39,7 +47,8 @@ router.get('/new', (req, res) => {
 router.post('/', (req, res) => {
     
     req.body.readyToEat = req.body.readyToEat === 'on' ? true : false
-
+     // add username to req.body to track related user
+    req.body.username = req.session.username
     Fruit.create(req.body, (err, createdFruit) =>{
         console.log('created' , createdFruit, err)
         res.redirect('/fruits')
